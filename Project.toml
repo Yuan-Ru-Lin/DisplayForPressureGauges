@@ -1,0 +1,4 @@
+[deps]
+Bonito = "824d6782-a2ef-11e9-3a09-e5662e0c26f8"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
