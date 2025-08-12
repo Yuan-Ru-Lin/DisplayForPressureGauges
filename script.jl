@@ -1,18 +1,25 @@
 using Bonito
 using WGLMakie
 using DataStructures
+using LibPQ, DBInterface
+
+## Initilizaition
 
 # Initialize buffers with some initial data
 initial_buf1 = CircularBuffer{Int16}(100)
 initial_buf2 = CircularBuffer{Int16}(100)
 initial_buf3 = CircularBuffer{Int16}(100)
 
-# Fill with initial data
 for i in 1:10
     push!(initial_buf1, rand(Int16))
     push!(initial_buf2, rand(Int16))
     push!(initial_buf3, rand(Int16))
 end
+
+# XXX: needs to be refactored so there is no specific connection string
+conn = DBInterface.connect(LibPQ.Connection, "postgresql://myuser:mypassword@localhost:5432/mydatabase")
+DBInterface.execute(conn, "CREATE TABLE IF NOT EXISTS mytable (channel TEXT, timestamp BIGINT DEFAULT FLOOR(EXTRACT(EPOCH FROM now())), value REAL)")
+stmt = DBInterface.prepare(conn, "INSERT INTO mytable (channel, value) VALUES (\$1, \$2)")
 
 buf1 = Observable(initial_buf1)
 buf2 = Observable(initial_buf2)
@@ -45,13 +52,23 @@ stephist!.(ax3, [buf1, buf2, buf3], bins=(typemin(Int16):1000:typemax(Int16)))
 
 t = Threads.@spawn try while true
         if is_running[]
-            push!(buf1.val, rand(Int16))
-            push!(buf2.val, rand(Int16))
-            push!(buf3.val, rand(Int16))
+
+            val1 = rand(Int16)
+            val2 = rand(Int16)
+            val3 = rand(Int16)
+
+            DBInterface.execute(stmt, ("ch0", val1))
+            DBInterface.execute(stmt, ("ch1", val2))
+            DBInterface.execute(stmt, ("ch2", val3))
+
+            push!(buf1.val, val1)
+            push!(buf2.val, val2)
+            push!(buf3.val, val3)
             notify(buf1)
             notify(buf2)
             notify(buf3)
             Makie.reset_limits!.([ax1, ax2, ax3])
+
         end
         sleep(1)
     end
