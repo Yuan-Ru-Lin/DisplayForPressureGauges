@@ -16,8 +16,8 @@ for i in 1:10
     push!(initial_buf3, rand(Int16))
 end
 
-# XXX: needs to be refactored so there is no specific connection string
-conn = DBInterface.connect(LibPQ.Connection, "postgresql://myuser:mypassword@localhost:5432/mydatabase")
+conn_string = get(ENV, "DATABASE_URL", "postgresql://myuser:mypassword@localhost:5432/mydatabase")
+conn = DBInterface.connect(LibPQ.Connection, conn_string)
 DBInterface.execute(conn, "CREATE TABLE IF NOT EXISTS mytable (channel TEXT, timestamp BIGINT DEFAULT FLOOR(EXTRACT(EPOCH FROM now())), value REAL)")
 stmt = DBInterface.prepare(conn, "INSERT INTO mytable (channel, value) VALUES (\$1, \$2)")
 
