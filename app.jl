@@ -2,8 +2,14 @@ using Bonito
 using WGLMakie
 using DataStructures
 using LibPQ, DBInterface
+using WiringPi
 
 ## Initilizaition
+
+# Setup ADS1115
+ads1115Setup(100, 0x48)
+digitalWrite(100, ADS1115_GAIN_6)
+digitalWrite(101, ADS1115_DR_64)
 
 # Initialize buffers with some initial data
 initial_buf1 = CircularBuffer{Int16}(100)
@@ -53,9 +59,9 @@ stephist!.(ax3, [buf1, buf2, buf3], bins=(typemin(Int16):1000:typemax(Int16)))
 t = Threads.@spawn try while true
         if is_running[]
 
-            val1 = rand(Int16)
-            val2 = rand(Int16)
-            val3 = rand(Int16)
+            val1 = analogRead(100)
+            val2 = analogRead(101)
+            val3 = analogRead(102)
 
             DBInterface.execute(stmt, ("ch0", val1))
             DBInterface.execute(stmt, ("ch1", val2))
