@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.5"
+julia_version = "1.11.6"
 manifest_format = "2.0"
-project_hash = "65c418c236975f64d5c1a6200ba31f6a769affa8"
+project_hash = "4db6af73f1269bc9d76aff5450fec8a04b4d1d3c"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -87,6 +87,12 @@ version = "1.3.0"
 git-tree-sha1 = "0691e34b3bb8be9307330f88d1a3c3f25466c24d"
 uuid = "d1d4a3ce-64b1-5f1a-9ba4-7e7e69966f35"
 version = "0.1.9"
+
+[[deps.BitIntegers]]
+deps = ["Random"]
+git-tree-sha1 = "f98cfeaba814d9746617822032d50a31c9926604"
+uuid = "c3b6d118-76ef-56ca-8cc7-ebb389d030a1"
+version = "0.3.5"
 
 [[deps.Bonito]]
 deps = ["Base64", "CodecZlib", "Colors", "Dates", "Deno_jll", "HTTP", "Hyperscript", "LinearAlgebra", "Markdown", "MsgPack", "Observables", "RelocatableFolders", "SHA", "Sockets", "Tables", "ThreadPools", "URIs", "UUIDs", "WidgetsBase"]
@@ -267,6 +273,12 @@ git-tree-sha1 = "cd6756e833c377e0ce9cd63fb97689a255f12323"
 uuid = "04572ae6-984a-583e-9378-9577a1c2574d"
 version = "1.33.4+0"
 
+[[deps.Dictionaries]]
+deps = ["Indexing", "Random", "Serialization"]
+git-tree-sha1 = "a86af9c4c4f33e16a2b2ff43c2113b2f390081fa"
+uuid = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
+version = "0.4.5"
+
 [[deps.Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -297,6 +309,18 @@ version = "0.9.5"
 deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 version = "1.6.0"
+
+[[deps.DuckDB]]
+deps = ["DBInterface", "Dates", "DuckDB_jll", "FixedPointDecimals", "Tables", "UUIDs", "WeakRefStrings"]
+git-tree-sha1 = "fac32a1e4c9e49886e41d82d9ad17fa5cf4161af"
+uuid = "d2f5444f-75bc-4fdf-ac35-56f514c445e1"
+version = "1.3.2"
+
+[[deps.DuckDB_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "0e60dd625d6c4183b6256bd1614a1993f3581166"
+uuid = "2cbbab25-fc8b-58cf-88d4-687a02676033"
+version = "1.3.2+0"
 
 [[deps.EarCut_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -397,6 +421,12 @@ weakdeps = ["PDMats", "SparseArrays", "Statistics"]
     FillArraysPDMatsExt = "PDMats"
     FillArraysSparseArraysExt = "SparseArrays"
     FillArraysStatisticsExt = "Statistics"
+
+[[deps.FixedPointDecimals]]
+deps = ["BitIntegers", "Parsers"]
+git-tree-sha1 = "cf637cd2d786280d2d4afa59c69294f110e2a28c"
+uuid = "fb4d412d-6eee-574d-9565-ede6634db7b0"
+version = "0.6.3"
 
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
@@ -556,6 +586,11 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "0936ba688c6d201805a83da835b55c61a180db52"
 uuid = "905a6f67-0a94-5f89-b386-d35d92009cd1"
 version = "3.1.11+0"
+
+[[deps.Indexing]]
+git-tree-sha1 = "ce1566720fd6b19ff3411404d4b977acd4814f9f"
+uuid = "313cdc1a-70c2-5d6a-ae34-0150d3930a38"
+version = "1.1.1"
 
 [[deps.IndirectArrays]]
 git-tree-sha1 = "012e604e1c7458645cb8b436f8fba789a51b257f"
@@ -1304,6 +1339,12 @@ weakdeps = ["ChainRulesCore"]
     [deps.SpecialFunctions.extensions]
     SpecialFunctionsChainRulesCoreExt = "ChainRulesCore"
 
+[[deps.SplitApplyCombine]]
+deps = ["Dictionaries", "Indexing"]
+git-tree-sha1 = "c06d695d51cfb2187e6848e98d6252df9101c588"
+uuid = "03a91e81-4c3e-53e1-a0a4-9c0c8f19dd66"
+version = "1.2.3"
+
 [[deps.StableRNGs]]
 deps = ["Random"]
 git-tree-sha1 = "95af145932c2ed859b63329952ce8d633719f091"
@@ -1470,6 +1511,12 @@ git-tree-sha1 = "4d4ed7f294cda19382ff7de4c137d24d16adc89b"
 uuid = "981d1d27-644d-49a2-9326-4793e63143c3"
 version = "0.1.0"
 
+[[deps.TypedTables]]
+deps = ["Adapt", "Dictionaries", "Indexing", "SplitApplyCombine", "Tables", "Unicode"]
+git-tree-sha1 = "84fd7dadde577e01eb4323b7e7b9cb51c62c60d4"
+uuid = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
+version = "1.4.6"
+
 [[deps.URIs]]
 git-tree-sha1 = "24c1c558881564e2217dcf7840a8b2e10caeb0f9"
 uuid = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
@@ -1520,6 +1567,12 @@ git-tree-sha1 = "2871385232dbfff9d355c13b241cfb6a04d60bde"
 uuid = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
 version = "0.13.0"
 
+[[deps.WeakRefStrings]]
+deps = ["DataAPI", "InlineStrings", "Parsers"]
+git-tree-sha1 = "b1be2855ed9ed8eac54e5caff2afcdb442d52c23"
+uuid = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
+version = "1.4.2"
+
 [[deps.WebP]]
 deps = ["CEnum", "ColorTypes", "FileIO", "FixedPointNumbers", "ImageCore", "libwebp_jll"]
 git-tree-sha1 = "aa1ca3c47f119fbdae8770c29820e5e6119b83f2"
@@ -1531,6 +1584,18 @@ deps = ["Observables"]
 git-tree-sha1 = "30a1d631eb06e8c868c559599f915a62d55c2601"
 uuid = "eead4739-05f7-45a1-878c-cee36b57321c"
 version = "0.1.4"
+
+[[deps.WiringPi]]
+deps = ["WiringPi_jll"]
+git-tree-sha1 = "9c9733c7f8ca73698ce601fc2df625be5270f334"
+uuid = "56b06491-0088-44d9-858f-9bc194f2c904"
+version = "0.2.2"
+
+[[deps.WiringPi_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "99a7679f9e8618aca73b022548c032eecdac42e1"
+uuid = "39e6258f-44e5-5edf-b49b-51a5e5bce6ab"
+version = "3.16.0+0"
 
 [[deps.WoodburyMatrices]]
 deps = ["LinearAlgebra", "SparseArrays"]
