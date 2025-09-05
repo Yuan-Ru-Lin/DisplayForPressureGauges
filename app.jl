@@ -24,5 +24,5 @@ t = Threads.@spawn try
         sleep(1)
     end
 catch e
-    e isa InterruptionException ? (@info "Stopped" exception = e) : rethrow(e)
+    e isa InterruptException ? (@info "Cancelled by the user" exception = e) : rethrow(e)
 end
