@@ -1,10 +1,6 @@
-using DataStructures
-using LibPQ, DBInterface
 using WiringPi
+using LibPQ, DBInterface
 
-## Initilizaition
-
-# Setup ADS1115
 ads1115Setup(100, 0x48)
 digitalWrite(100, ADS1115_GAIN_6)
 digitalWrite(101, ADS1115_DR_64)
@@ -16,18 +12,15 @@ stmt = DBInterface.prepare(conn, "INSERT INTO mytable (channel, value) VALUES (\
 
 t = Threads.@spawn try
     while true
-        if is_running[]
+        val1 = analogRead(100)
+        val2 = analogRead(101)
+        val3 = analogRead(102)
 
-            val1 = analogRead(100)
-            val2 = analogRead(101)
-            val3 = analogRead(102)
+        DBInterface.execute(stmt, ("ch0", val1))
+        DBInterface.execute(stmt, ("ch1", val2))
+        DBInterface.execute(stmt, ("ch2", val3))
 
-            DBInterface.execute(stmt, ("ch0", val1))
-            DBInterface.execute(stmt, ("ch1", val2))
-            DBInterface.execute(stmt, ("ch2", val3))
-
-            @info "Inserted values: ch0 = $val1, ch1 = $val2, ch3 = $val3"
-        end
+        @info "Inserted values: ch0 = $val1, ch1 = $val2, ch3 = $val3"
         sleep(1)
     end
 catch e
