@@ -1,0 +1,8 @@
+slowdash_project:
+  name: QuickTour
+  title: SlowDash Quick Tour
+
+  data_source:
+    url: postgresql://myuser:mypassword@db:5432/mydatabase
+    time_series:
+      schema: mytable [channel] @timestamp(unix) = value
