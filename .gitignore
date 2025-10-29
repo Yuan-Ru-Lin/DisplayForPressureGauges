@@ -1,3 +1,5 @@
 .DS_Store
 presentation
 notes
+db_data
+!db_data/.gitkeep
