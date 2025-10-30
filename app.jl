@@ -12,20 +12,17 @@ stmt = DBInterface.prepare(conn, "INSERT INTO mytable (channel, value) VALUES (\
 
 t = Threads.@spawn try
     while true
-        # MKS AA07B (0--5V output)
-        val1 = analogRead(100) / 32768 * 6.144 * 6
-        # Pfeiffer PKR 261 (0--10V output)
-        val2 = analogRead(101) / 32768 * 6.144 * 3
-        # Inficon PCG550 (0--10V output)
-        val3 = analogRead(102) / 32768 * 6.144 * 3
+        ch0 = analogRead(100) / 32768 * 6.144 * 3
+        ch1 = analogRead(101) / 32768 * 6.144 * 3
+        ch2 = analogRead(102) / 32768 * 6.144 * 6
 
-        pressure1_psia = val1 / 5 * 250                     # MKS AA07B
-        pressure2_mbar = exp10(1.667 * val2 - 5.3333)       # Pfeiffer PKR 261
-        pressure3_mbar = 5e-5 * exp10((val3 - 0.61)/1.286)  # Inficon PCG550
+        pressure_pcg550_mbar = 5e-5 * exp10((ch0 - 0.61)/1.286)  # Inficon PCG550 (0--10V output)
+        pressure_pkg261_mbar = exp10(1.667 * ch1 - 5.3333)       # Pfeiffer PKR 261 (0--10V output)
+        pressure_aa07b_psia  = ch2 / 5 * 250                     # MKS AA07B (0--5V output)
 
-        DBInterface.execute(stmt, ("ch0", pressure1_psia))
-        DBInterface.execute(stmt, ("ch1", pressure2_mbar))
-        DBInterface.execute(stmt, ("ch2", pressure3_mbar))
+        DBInterface.execute(stmt, ("ch0", pressure_pcg550_mbar))
+        DBInterface.execute(stmt, ("ch1", pressure_pkg261_mbar))
+        DBInterface.execute(stmt, ("ch2", pressure_aa07b_psia))
 
         @debug "ch0 = $val1, ch1 = $val2, ch3 = $val3"
         sleep(1)
