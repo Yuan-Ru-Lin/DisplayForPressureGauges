@@ -17,14 +17,15 @@ t = Threads.@spawn try
         ch2 = analogRead(102) / 32768 * 6.144 * 6
 
         pressure_pcg550_mbar = 5e-5 * exp10((ch0 - 0.61)/1.286)  # Inficon PCG550 (0--10V output)
-        pressure_pkg261_mbar = exp10(1.667 * ch1 - 5.3333)       # Pfeiffer PKR 261 (0--10V output)
-        pressure_aa07b_psia  = ch2 / 5 * 250                     # MKS AA07B (0--5V output)
+        pressure_pkg261_mbar = exp10(1.667 * ch1 - 11.3333)      # Pfeiffer PKR 261 (0--10V output)
+        pressure_aa07b_psia  = ch2 / 5 * 250                     # MKS AA07B (0--5V output, range 250 pisa)
+        pressure_aa07b_psia /= 2 # I don't know why this is needed
 
         DBInterface.execute(stmt, ("ch0", pressure_pcg550_mbar))
         DBInterface.execute(stmt, ("ch1", pressure_pkg261_mbar))
         DBInterface.execute(stmt, ("ch2", pressure_aa07b_psia))
 
-        @debug "ch0 = $val1, ch1 = $val2, ch3 = $val3"
+        @debug "Original values" ch0 ch1 ch2
         sleep(1)
     end
 catch e
