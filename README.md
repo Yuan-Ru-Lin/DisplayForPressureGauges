@@ -2,90 +2,283 @@
 
 A Julia application for monitoring multiple vacuum pressure gauges, storing time-series data in PostgreSQL, and visualizing it via SlowDash.
 
-## Hardware Requirements
+This guide walks you through the system step by step, starting with visualization and building up to hardware integration.
 
-- **Raspberry Pi** with WiringPi support
-- **ADS1115 ADC** (I2C address 0x48)
-- **Three pressure gauges:**
-  - Inficon PCG550 (0-10V output)
-  - Pfeiffer PKR 261 (0-10V output)
-  - MKS AA07B (0-5V output, 250 psia range)
+## Quick Start: See the Dashboard First
 
-## Software Requirements
+Let's start by getting the visualization running so you have something to interact with immediately.
 
-- Julia 1.6 or higher
-- Docker Compose
-- PostgreSQL (provided via Docker Compose)
-
-## Setup
-
-### 1. Install Julia Dependencies
-
-```bash
-julia --project=. -e 'using Pkg; Pkg.instantiate()'
-```
-
-### 2. Start the Database and Dashboard
+### Step 1: Start the Database and Dashboard
 
 ```bash
 docker compose up -d
 ```
 
-This starts:
-- PostgreSQL on port 5432
-- SlowDash visualization on http://localhost:18881
+This starts two services:
+- **PostgreSQL** (port 5432) - stores your pressure readings
+- **SlowDash** (port 18881) - web dashboard for visualization
 
-### 3. Run Data Collection
+Open your browser to http://localhost:18881 to see the dashboard interface.
+
+### Step 2: Add Some Test Data
+
+Let's manually insert data so you can see how the system works:
+
+```bash
+# Connect to the database
+docker compose exec db psql -U myuser -d mydatabase
+
+# Create the table (if it doesn't exist)
+CREATE TABLE IF NOT EXISTS mytable (
+    channel TEXT,
+    timestamp BIGINT DEFAULT FLOOR(EXTRACT(EPOCH FROM now())),
+    value REAL
+);
+
+# Insert some test readings
+INSERT INTO mytable (channel, value) VALUES ('ch0', 1.5);
+INSERT INTO mytable (channel, value) VALUES ('ch1', 0.002);
+INSERT INTO mytable (channel, value) VALUES ('ch2', 15.3);
+
+# See your data
+SELECT * FROM mytable ORDER BY timestamp DESC LIMIT 10;
+
+# Exit
+\q
+```
+
+Refresh your SlowDash dashboard - you should see your test data plotted.
+
+### Step 3: Generate Continuous Test Data
+
+Instead of manual insertion, let's create a simple script to generate data continuously.
+
+Create a file `test_data_generator.jl`:
+
+```julia
+using LibPQ, DBInterface
+
+# Connect to database
+conn_string = get(ENV, "DATABASE_URL", "postgresql://myuser:mypassword@localhost:5432/mydatabase")
+conn = DBInterface.connect(LibPQ.Connection, conn_string)
+
+# Create table
+DBInterface.execute(conn, """
+    CREATE TABLE IF NOT EXISTS mytable (
+        channel TEXT,
+        timestamp BIGINT DEFAULT FLOOR(EXTRACT(EPOCH FROM now())),
+        value REAL
+    )
+""")
+
+# Prepare insert statement
+stmt = DBInterface.prepare(conn, "INSERT INTO mytable (channel, value) VALUES (\$1, \$2)")
+
+println("Generating test data... Press Ctrl+C to stop")
+
+try
+    while true
+        # Generate random pressure-like values
+        ch0 = rand() * 10.0      # Random 0-10 mbar
+        ch1 = rand() * 0.01      # Random 0-0.01 mbar
+        ch2 = rand() * 250.0     # Random 0-250 psia
+
+        # Insert into database
+        DBInterface.execute(stmt, ("ch0", ch0))
+        DBInterface.execute(stmt, ("ch1", ch1))
+        DBInterface.execute(stmt, ("ch2", ch2))
+
+        println("Inserted: ch0=$ch0, ch1=$ch1, ch2=$ch2")
+        sleep(1)
+    end
+catch e
+    e isa InterruptException ? println("\nStopped by user") : rethrow(e)
+end
+```
+
+Run it:
+
+```bash
+# Install Julia dependencies first
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
+
+# Run the test data generator
+julia --project=. test_data_generator.jl
+```
+
+Watch the SlowDash dashboard update in real-time as data flows in!
+
+## Understanding the Data Flow
+
+Now that you've seen the system working, here's what's happening:
+
+```
+Data Source → PostgreSQL → SlowDash → Your Browser
+```
+
+1. **Data Source**: Pressure readings (from test script or real hardware)
+2. **PostgreSQL**: Stores timestamped readings in `mytable`
+3. **SlowDash**: Queries the database and renders plots
+4. **Your Browser**: Displays interactive dashboard at http://localhost:18881
+
+### Database Schema
+
+```sql
+CREATE TABLE mytable (
+    channel TEXT,              -- Which gauge: 'ch0', 'ch1', or 'ch2'
+    timestamp BIGINT,          -- Unix epoch (seconds since 1970)
+    value REAL                 -- Pressure reading
+);
+```
+
+### SlowDash Configuration
+
+Check `SlowdashProject.yaml` to see how SlowDash connects to PostgreSQL:
+
+```yaml
+data_source:
+  url: postgresql://myuser:mypassword@db:5432/mydatabase
+  time_series:
+    schema: mytable [channel] @timestamp(unix) = value
+```
+
+This tells SlowDash:
+- Where the database is
+- Which table to read from
+- How to interpret the columns (channel name, timestamp, value)
+
+## Real Hardware Integration
+
+Once you're comfortable with the data flow, you can connect real pressure gauges.
+
+### Hardware Requirements
+
+- **Raspberry Pi** with WiringPi support
+- **ADS1115 ADC** (I2C address 0x48) - converts analog voltages to digital
+- **Three pressure gauges:**
+  - Inficon PCG550 (0-10V output)
+  - Pfeiffer PKR 261 (0-10V output)
+  - MKS AA07B (0-5V output, 250 psia range)
+
+### Running Real Data Collection
+
+The `app.jl` script reads from actual hardware:
 
 ```bash
 julia --project=. app.jl
 ```
 
-The application reads from the three pressure gauges every second and stores readings in the database.
+**What it does:**
 
-## Architecture
+1. Configures the ADS1115 ADC
+2. Reads voltage from each gauge every second
+3. Converts voltages to pressure using gauge-specific formulas:
+   - **PCG550**: `5e-5 * 10^((V - 0.61)/1.286)` mbar
+   - **PKR 261**: `10^(1.667*V - 11.3333)` mbar
+   - **AA07B**: `V / 5 * 250` psia (divided by 2 for calibration)
+4. Inserts readings into PostgreSQL (same schema as test data!)
+5. SlowDash automatically picks up the real data
 
-**Data Collection (`app.jl`)**
-- Configures ADS1115 ADC with appropriate gain and data rate
-- Reads analog values from three channels
-- Converts voltages to pressure readings using gauge-specific formulas:
-  - PCG550: `5e-5 * 10^((V - 0.61)/1.286)` mbar
-  - PKR 261: `10^(1.667V - 11.3333)` mbar
-  - AA07B: `V / 5 * 250` psia
-- Inserts timestamped readings into PostgreSQL
+### Hardware Connections
 
-**Database Schema**
-- Table: `mytable`
-- Columns: `channel` (TEXT), `timestamp` (BIGINT, unix epoch), `value` (REAL)
+```
+Raspberry Pi GPIO
+    ↓ (I2C: SDA, SCL)
+ADS1115 ADC (channels 0, 1, 2)
+    ↓ (analog voltage)
+Pressure Gauges (PCG550, PKR 261, AA07B)
+```
 
-**Visualization**
-- SlowDash reads from PostgreSQL and provides web-based plotting
-- Configuration in `SlowdashProject.yaml`
-- Access dashboard at http://localhost:18881
+The ADS1115 converts the analog voltage outputs from the gauges into digital values that Julia can read.
+
+## Experiments to Try
+
+### 1. Modify Sampling Rate
+
+In your test script or `app.jl`, change:
+```julia
+sleep(1)  # Wait 1 second
+```
+to:
+```julia
+sleep(0.5)  # Sample twice as fast
+```
+
+### 2. Add a Fourth Channel
+
+Modify the database inserts to add `ch3`:
+```julia
+DBInterface.execute(stmt, ("ch3", rand() * 100.0))
+```
+
+SlowDash will automatically pick it up!
+
+### 3. Query Historical Data
+
+```bash
+docker compose exec db psql -U myuser -d mydatabase -c \
+  "SELECT channel, AVG(value) as avg_pressure
+   FROM mytable
+   WHERE timestamp > EXTRACT(EPOCH FROM now() - interval '1 hour')
+   GROUP BY channel;"
+```
+
+### 4. Clear Old Data
+
+```bash
+docker compose exec db psql -U myuser -d mydatabase -c \
+  "DELETE FROM mytable WHERE timestamp < EXTRACT(EPOCH FROM now() - interval '1 day');"
+```
 
 ## Configuration
 
-Set the database connection via environment variable:
+### Database Connection
 
+Set via environment variable:
 ```bash
 export DATABASE_URL="postgresql://myuser:mypassword@localhost:5432/mydatabase"
 ```
 
 Default credentials are in `docker-compose.yaml`.
 
+### Change SlowDash Settings
+
+Edit `SlowdashProject.yaml` to customize:
+- Project name and title
+- Database connection
+- Plot configurations
+
+Restart SlowDash: `docker compose restart slowdash`
+
 ## Troubleshooting
 
-**Cannot connect to I2C device**
-- Verify ADS1115 is connected at address 0x48
-- Check I2C is enabled: `sudo raspi-config`
+### Can't access SlowDash
 
-**Database connection refused**
+- Verify it's running: `docker compose ps`
+- Check logs: `docker compose logs slowdash`
+- Try http://localhost:18881 in a different browser
+
+### Database connection errors
+
 - Ensure Docker Compose is running: `docker compose ps`
 - Check database logs: `docker compose logs db`
+- Verify connection string matches `docker-compose.yaml` credentials
 
-**WiringPi errors**
+### No data appearing in SlowDash
+
+- Check if data exists: `docker compose exec db psql -U myuser -d mydatabase -c "SELECT COUNT(*) FROM mytable;"`
+- Verify SlowDash is reading the right table (check `SlowdashProject.yaml`)
+- Look at SlowDash logs for errors: `docker compose logs slowdash`
+
+### Hardware issues (Raspberry Pi only)
+
+**Cannot connect to I2C device:**
+- Verify ADS1115 is connected at address 0x48: `i2cdetect -y 1`
+- Enable I2C if disabled: `sudo raspi-config` → Interface Options → I2C
+
+**WiringPi errors:**
 - This requires a Raspberry Pi with WiringPi library installed
-- Won't work on non-Pi systems
+- Won't work on regular computers (use test data generator instead)
 
 ## Stopping Services
 
@@ -95,10 +288,33 @@ Ctrl+C in the Julia terminal
 
 # Stop Docker services
 docker compose down
+
+# Stop and remove all data
+docker compose down -v
 ```
+
+## Project Structure
+
+```
+.
+├── app.jl                   # Real hardware data collection
+├── Project.toml             # Julia dependencies
+├── docker-compose.yaml      # Docker services (PostgreSQL + SlowDash)
+├── SlowdashProject.yaml     # SlowDash configuration
+├── db_data/                 # PostgreSQL data directory (persists data)
+└── README.md               # This file
+```
+
+## Further Learning
+
+- **Julia Database Guide**: https://juliadatabases.org/
+- **SlowDash Documentation**: https://slowproj.github.io/slowdash/
+- **PostgreSQL Tutorial**: https://www.postgresql.org/docs/current/tutorial.html
+- **ADS1115 Datasheet**: Understanding the ADC specifications
+- **Vacuum Gauge Basics**: Understanding pressure measurement ranges and units
 
 ## Notes
 
-- The MKS AA07B reading is divided by 2 (see app.jl:22) for calibration reasons
-- Data persists in `./db_data/` directory
-- Debug logging available with `julia --project=. app.jl` (see `@debug` statements in code)
+- Data persists in `./db_data/` even after stopping Docker
+- The MKS AA07B reading is divided by 2 in `app.jl:22` for calibration
+- Enable debug logging with Julia's `-d` flag or by setting logging level in code
