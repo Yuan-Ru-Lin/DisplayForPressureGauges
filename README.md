@@ -172,10 +172,7 @@ julia --project=. app.jl
 
 1. Configures the ADS1115 ADC
 2. Reads voltage from each gauge every second
-3. Converts voltages to pressure using gauge-specific formulas:
-    - **PCG550**: `5e-5 * 10^((V - 0.61)/1.286)` mbar
-    - **PKR 261**: `10^(1.667*V - 11.3333)` mbar
-    - **AA07B**: `V / 5 * 250` psia (divided by 2 for calibration)
+3. Converts voltages to pressure using gauge-specific calibration formulas (see `app.jl` for details)
 4. Inserts readings into PostgreSQL (same schema as test data!)
 5. SlowDash automatically picks up the real data
 
@@ -277,6 +274,7 @@ docker compose down -v
 - **PostgreSQL Tutorial**: https://www.postgresql.org/docs/current/tutorial.html
 - **ADS1115 Datasheet**: https://www.ti.com/lit/ds/symlink/ads1115.pdf
 - **Vacuum Gauge Basics**:
-    - Inficon
-    - Pfiffier
-    - MKS
+    - [Inficon PCG550](PCG55x-Pirani-Capacitance-Diaphragm-Gauge.pdf)
+    - [Pfeiffer PKR 261](PKR261-Manual.pdf)
+    - [MKS AA07B](docs/AA07B-AA08B-20054398-001-MAN.pdf)
+- [**Scheme**](docs/Schematic.pdf)
