@@ -1,61 +1,104 @@
-# Real-Time Pressure Gauge Display
+# Pressure Gauge Monitoring System
 
-A Julia web application for visualizing sensor data with interactive plots and database storage.
+A Julia application for monitoring multiple vacuum pressure gauges, storing time-series data in PostgreSQL, and visualizing it via SlowDash.
+
+## Hardware Requirements
+
+- **Raspberry Pi** with WiringPi support
+- **ADS1115 ADC** (I2C address 0x48)
+- **Three pressure gauges:**
+  - Inficon PCG550 (0-10V output)
+  - Pfeiffer PKR 261 (0-10V output)
+  - MKS AA07B (0-5V output, 250 psia range)
+
+## Software Requirements
+
+- Julia 1.6 or higher
+- Docker Compose
+- PostgreSQL (provided via Docker Compose)
 
 ## Setup
 
-Requires Julia 1.6+ and PostgreSQL. Install dependencies and run:
+### 1. Install Julia Dependencies
 
 ```bash
-julia --project=.
-julia> using Pkg; Pkg.instantiate()
-julia> exit()
-julia --project=. script.jl
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 
-Access the dashboard at http://localhost:9384
+### 2. Start the Database and Dashboard
 
-## Requirements
+```bash
+docker compose up -d
+```
 
-- Julia 1.6 or higher
-- PostgreSQL database server
-- Web browser
+This starts:
+- PostgreSQL on port 5432
+- SlowDash visualization on http://localhost:18881
+
+### 3. Run Data Collection
+
+```bash
+julia --project=. app.jl
+```
+
+The application reads from the three pressure gauges every second and stores readings in the database.
+
+## Architecture
+
+**Data Collection (`app.jl`)**
+- Configures ADS1115 ADC with appropriate gain and data rate
+- Reads analog values from three channels
+- Converts voltages to pressure readings using gauge-specific formulas:
+  - PCG550: `5e-5 * 10^((V - 0.61)/1.286)` mbar
+  - PKR 261: `10^(1.667V - 11.3333)` mbar
+  - AA07B: `V / 5 * 250` psia
+- Inserts timestamped readings into PostgreSQL
+
+**Database Schema**
+- Table: `mytable`
+- Columns: `channel` (TEXT), `timestamp` (BIGINT, unix epoch), `value` (REAL)
+
+**Visualization**
+- SlowDash reads from PostgreSQL and provides web-based plotting
+- Configuration in `SlowdashProject.yaml`
+- Access dashboard at http://localhost:18881
+
+## Configuration
+
+Set the database connection via environment variable:
+
+```bash
+export DATABASE_URL="postgresql://myuser:mypassword@localhost:5432/mydatabase"
+```
+
+Default credentials are in `docker-compose.yaml`.
 
 ## Troubleshooting
 
-**Database connection issues**
-Set the `DATABASE_URL` environment variable with your PostgreSQL credentials:
-```bash
-export DATABASE_URL="postgresql://username:password@localhost:5432/database"
-```
-If not set, it defaults to `postgresql://myuser:mypassword@localhost:5432/mydatabase`.
+**Cannot connect to I2C device**
+- Verify ADS1115 is connected at address 0x48
+- Check I2C is enabled: `sudo raspi-config`
 
-**Port conflicts**
-If port 9384 is in use, modify the port setting in the script or stop the conflicting service.
+**Database connection refused**
+- Ensure Docker Compose is running: `docker compose ps`
+- Check database logs: `docker compose logs db`
 
-**Package installation problems**
-Run `julia --project=. -e 'using Pkg; Pkg.update()'` to resolve dependency issues.
+**WiringPi errors**
+- This requires a Raspberry Pi with WiringPi library installed
+- Won't work on non-Pi systems
 
-**Julia help**
-Use `?function_name` in the Julia REPL for documentation on any function.
-
-## Package Documentation
-
-- [WGLMakie.jl](https://docs.makie.org/stable/explanations/backends/wglmakie/) - Interactive web plotting
-- [Bonito.jl](https://bonito.bonito.dev/dev/) - Julia web application framework
-- [LibPQ.jl](https://invenia.github.io/LibPQ.jl/stable/) - PostgreSQL database interface
-- [DataStructures.jl](https://juliacollections.github.io/DataStructures.jl/stable/) - Provides CircularBuffer for data storage
-- [DBInterface.jl](https://juliadatabases.org/DBInterface.jl/stable/) - Database abstraction layer
-
-For Julia beginners, see the [official documentation](https://docs.julialang.org/en/v1/).
-
-## Docker Deployment
+## Stopping Services
 
 ```bash
-docker build -t display-system .
-docker run -p 8080:8080 display-system
+# Stop data collection
+Ctrl+C in the Julia terminal
+
+# Stop Docker services
+docker compose down
 ```
 
 ## Notes
 
-The application currently generates simulated data. Modify the data generation section to connect real sensors.
+- The MKS AA07B reading is divided by 2 (see app.jl:22) for calibration reasons
+- Data persists in `./db_data/` directory
+- Debug logging available with `julia --project=. app.jl` (see `@debug` statements in code)
