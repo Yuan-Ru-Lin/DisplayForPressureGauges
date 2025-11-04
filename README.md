@@ -106,7 +106,7 @@ julia --project=. -e 'using Pkg; Pkg.instantiate()'
 julia --project=. test_data_generator.jl
 ```
 
-Watch the SlowDash dashboard update in real-time as data flows in!
+Click one of the channels and watch the SlowDash dashboard update in real-time as data flows in!
 
 ## Understanding the Data Flow
 
@@ -149,16 +149,16 @@ This tells SlowDash:
 
 ## Real Hardware Integration
 
-Once you're comfortable with the data flow, you can connect real pressure gauges.
+Once you're comfortable with the data flow, you can connect to real pressure gauges.
 
 ### Hardware Requirements
 
 - **Raspberry Pi** with WiringPi support
 - **ADS1115 ADC** (I2C address 0x48) - converts analog voltages to digital
 - **Three pressure gauges:**
-  - Inficon PCG550 (0-10V output)
-  - Pfeiffer PKR 261 (0-10V output)
-  - MKS AA07B (0-5V output, 250 psia range)
+    - Inficon PCG550 (0-10V output)
+    - Pfeiffer PKR 261 (0-10V output)
+    - MKS AA07B (0-5V output, 250 psia range)
 
 ### Running Real Data Collection
 
@@ -173,9 +173,9 @@ julia --project=. app.jl
 1. Configures the ADS1115 ADC
 2. Reads voltage from each gauge every second
 3. Converts voltages to pressure using gauge-specific formulas:
-   - **PCG550**: `5e-5 * 10^((V - 0.61)/1.286)` mbar
-   - **PKR 261**: `10^(1.667*V - 11.3333)` mbar
-   - **AA07B**: `V / 5 * 250` psia (divided by 2 for calibration)
+    - **PCG550**: `5e-5 * 10^((V - 0.61)/1.286)` mbar
+    - **PKR 261**: `10^(1.667*V - 11.3333)` mbar
+    - **AA07B**: `V / 5 * 250` psia (divided by 2 for calibration)
 4. Inserts readings into PostgreSQL (same schema as test data!)
 5. SlowDash automatically picks up the real data
 
@@ -191,55 +191,21 @@ Pressure Gauges (PCG550, PKR 261, AA07B)
 
 The ADS1115 converts the analog voltage outputs from the gauges into digital values that Julia can read.
 
-## Experiments to Try
-
-### 1. Modify Sampling Rate
-
-In your test script or `app.jl`, change:
-```julia
-sleep(1)  # Wait 1 second
-```
-to:
-```julia
-sleep(0.5)  # Sample twice as fast
-```
-
-### 2. Add a Fourth Channel
-
-Modify the database inserts to add `ch3`:
-```julia
-DBInterface.execute(stmt, ("ch3", rand() * 100.0))
-```
-
-SlowDash will automatically pick it up!
-
-### 3. Query Historical Data
-
-```bash
-docker compose exec db psql -U myuser -d mydatabase -c \
-  "SELECT channel, AVG(value) as avg_pressure
-   FROM mytable
-   WHERE timestamp > EXTRACT(EPOCH FROM now() - interval '1 hour')
-   GROUP BY channel;"
-```
-
-### 4. Clear Old Data
-
-```bash
-docker compose exec db psql -U myuser -d mydatabase -c \
-  "DELETE FROM mytable WHERE timestamp < EXTRACT(EPOCH FROM now() - interval '1 day');"
-```
-
 ## Configuration
 
 ### Database Connection
 
-Set via environment variable:
-```bash
-export DATABASE_URL="postgresql://myuser:mypassword@localhost:5432/mydatabase"
-```
+The default database credentials are:
+- Username: `myuser`
+- Password: `mypassword`
+- Database: `mydatabase`
 
-Default credentials are in `docker-compose.yaml`.
+These are configured in `docker-compose.yaml`. To use different credentials, either:
+1. Edit `docker-compose.yaml` and restart: `docker compose down && docker compose up -d`
+2. Set the `DATABASE_URL` environment variable before running Julia scripts:
+```bash
+export DATABASE_URL="postgresql://youruser:yourpassword@localhost:5432/yourdatabase"
+```
 
 ### Change SlowDash Settings
 
@@ -309,5 +275,8 @@ docker compose down -v
 
 - **SlowDash Documentation**: https://slowproj.github.io/slowdash/
 - **PostgreSQL Tutorial**: https://www.postgresql.org/docs/current/tutorial.html
-- **ADS1115 Datasheet**: Understanding the ADC specifications
-- **Vacuum Gauge Basics**: Understanding pressure measurement ranges and units
+- **ADS1115 Datasheet**: https://www.ti.com/lit/ds/symlink/ads1115.pdf
+- **Vacuum Gauge Basics**:
+    - Inficon
+    - Pfiffier
+    - MKS
