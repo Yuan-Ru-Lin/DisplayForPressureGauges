@@ -289,7 +289,7 @@ Ctrl+C in the Julia terminal
 # Stop Docker services
 docker compose down
 
-# Stop and remove all data
+# Stop and remove all data; don't do this unless you know what you're doing
 docker compose down -v
 ```
 
@@ -297,24 +297,17 @@ docker compose down -v
 
 ```
 .
-├── app.jl                   # Real hardware data collection
-├── Project.toml             # Julia dependencies
-├── docker-compose.yaml      # Docker services (PostgreSQL + SlowDash)
-├── SlowdashProject.yaml     # SlowDash configuration
-├── db_data/                 # PostgreSQL data directory (persists data)
+├── app.jl                  # Real hardware data collection
+├── Project.toml            # Julia dependencies
+├── docker-compose.yaml     # Docker services (PostgreSQL + SlowDash)
+├── SlowdashProject.yaml    # SlowDash configuration
+├── db_data/                # PostgreSQL data directory (persists data)
 └── README.md               # This file
 ```
 
 ## Further Learning
 
-- **Julia Database Guide**: https://juliadatabases.org/
 - **SlowDash Documentation**: https://slowproj.github.io/slowdash/
 - **PostgreSQL Tutorial**: https://www.postgresql.org/docs/current/tutorial.html
 - **ADS1115 Datasheet**: Understanding the ADC specifications
 - **Vacuum Gauge Basics**: Understanding pressure measurement ranges and units
-
-## Notes
-
-- Data persists in `./db_data/` even after stopping Docker
-- The MKS AA07B reading is divided by 2 in `app.jl:22` for calibration
-- Enable debug logging with Julia's `-d` flag or by setting logging level in code
