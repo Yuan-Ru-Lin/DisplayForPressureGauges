@@ -277,4 +277,4 @@ docker compose down -v
     - [Inficon PCG550](docs/PCG55x-Pirani-Capacitance-Diaphragm-Gauge.pdf)
     - [Pfeiffer PKR 261](docs/PKR261-Manual.pdf)
     - [MKS AA07B](docs/AA07B-AA08B-20054398-001-MAN.pdf)
-- [**Scheme**](docs/Schematic.pdf)
+- [**Schematic**](docs/Schematic.pdf)
