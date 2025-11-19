@@ -10,7 +10,7 @@ conn = DBInterface.connect(LibPQ.Connection, conn_string)
 DBInterface.execute(conn, "CREATE TABLE IF NOT EXISTS mytable (channel TEXT, timestamp BIGINT DEFAULT FLOOR(EXTRACT(EPOCH FROM now())), value REAL)")
 stmt = DBInterface.prepare(conn, "INSERT INTO mytable (channel, value) VALUES (\$1, \$2)")
 
-t = Threads.@spawn try
+#t = Threads.@spawn try
     while true
         ch0 = analogRead(100) / 32768 * 6.144 * 3
         ch1 = analogRead(101) / 32768 * 6.144 * 3
@@ -28,6 +28,6 @@ t = Threads.@spawn try
         @debug "Original values" ch0 ch1 ch2
         sleep(1)
     end
-catch e
-    e isa InterruptException ? (@info "Cancelled by the user" exception = e) : rethrow(e)
-end
+#catch e
+#    e isa InterruptException ? (@info "Cancelled by the user" exception = e) : rethrow(e)
+#end

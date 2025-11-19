@@ -1,7 +1,7 @@
-FROM julia:1.11.6-bookworm
+FROM julia:1.12.1-bookworm
 
-WORKDIR /env
-COPY . . 
+WORKDIR /app
+COPY Project.toml Manifest.toml .
 ENV JULIA_CPU_TARGET=generic
 RUN julia --project=. -e 'using Pkg; Pkg.instantiate()'
-ENTRYPOINT ["julia", "--project=."]
+ENTRYPOINT ["julia", "--project=.", "app.jl"]

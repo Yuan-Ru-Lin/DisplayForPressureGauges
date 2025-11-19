@@ -22,5 +22,17 @@ services:
     volumes:
       - ./SlowdashProject.yaml:/project/SlowdashProject.yaml
 
+  juliaapp:
+    build: .
+    image: yuanruleonlin/ar-pressure-gauges-display:0.3
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://myuser:mypassword@db:5432/mydatabase"
+    devices:
+      - /dev/i2c-1:/dev/i2c-1
+    volumes:
+      - ./app.jl:/app/app.jl
+
 volumes:
   db_data:
