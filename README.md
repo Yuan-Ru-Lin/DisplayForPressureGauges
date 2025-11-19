@@ -278,3 +278,5 @@ docker compose down -v
     - [Pfeiffer PKR 261](docs/PKR261-Manual.pdf)
     - [MKS AA07B](docs/AA07B-AA08B-20054398-001-MAN.pdf)
 - [**Schematic**](docs/Schematic.pdf)
+
+There are also know-how about [Docker](docs/know-how/docker.md) and the [touchscreen](docs/know-how/touchscreen.md) used in this project.
